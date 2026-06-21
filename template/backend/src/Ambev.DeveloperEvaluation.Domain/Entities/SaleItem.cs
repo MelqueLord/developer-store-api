@@ -16,6 +16,12 @@ public class SaleItem : BaseEntity
 
     public void ApplyBusinessRules()
     {
+        if (ProductId == Guid.Empty)
+            throw new DomainException("Product is required");
+
+        if (string.IsNullOrWhiteSpace(ProductName))
+            throw new DomainException("Product name is required");
+
         if (Quantity <= 0)
             throw new DomainException("Quantity must be greater than zero");
 
