@@ -1,7 +1,6 @@
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using AutoMapper;
-using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -37,12 +36,6 @@ public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, UpdateSaleRe
     /// <returns>The updated sale details.</returns>
     public async Task<UpdateSaleResult> Handle(UpdateSaleCommand command, CancellationToken cancellationToken)
     {
-        var validator = new UpdateSaleCommandValidator();
-        var validationResult = await validator.ValidateAsync(command, cancellationToken);
-
-        if (!validationResult.IsValid)
-            throw new ValidationException(validationResult.Errors);
-
         var sale = await _saleRepository.GetByIdAsync(command.Id, cancellationToken);
         if (sale == null)
             throw new KeyNotFoundException($"Sale with ID {command.Id} not found");
