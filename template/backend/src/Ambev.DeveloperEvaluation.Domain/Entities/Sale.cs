@@ -60,6 +60,7 @@ public class Sale : BaseEntity
             AddDomainEvent(new ItemCancelledEvent(this, item));
         }
 
+        TotalAmount = 0m;
         AddDomainEvent(new SaleCancelledEvent(this));
     }
 

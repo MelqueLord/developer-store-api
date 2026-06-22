@@ -47,6 +47,19 @@ public class SaleTests
         Assert.NotNull(sale.UpdatedAt);
     }
 
+    [Fact(DisplayName = "Sale cancellation should reset total amount")]
+    public void Given_SaleWithCalculatedTotal_When_Cancel_Then_ShouldResetTotalAmount()
+    {
+        var sale = CreateSale();
+        sale.Items.Add(CreateItem(quantity: 3, unitPrice: 10m));
+        sale.Items.Add(CreateItem(quantity: 4, unitPrice: 10m));
+        sale.Recalculate();
+
+        sale.Cancel();
+
+        Assert.Equal(0m, sale.TotalAmount);
+    }
+
     [Fact(DisplayName = "Cancelled sale should not allow item replacement")]
     public void Given_CancelledSale_When_ReplaceItems_Then_ShouldThrowDomainException()
     {
