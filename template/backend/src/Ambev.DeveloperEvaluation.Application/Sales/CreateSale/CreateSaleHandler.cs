@@ -38,6 +38,7 @@ public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, CreateSaleRe
     {
         var sale = _mapper.Map<Sale>(command);
         sale.Recalculate();
+        sale.RegisterCreated();
 
         var createdSale = await _saleRepository.CreateAsync(sale, cancellationToken);
 

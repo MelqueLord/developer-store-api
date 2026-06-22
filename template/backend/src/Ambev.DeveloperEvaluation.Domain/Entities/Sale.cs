@@ -1,4 +1,5 @@
 using Ambev.DeveloperEvaluation.Domain.Common;
+using Ambev.DeveloperEvaluation.Domain.Events;
 
 namespace Ambev.DeveloperEvaluation.Domain.Entities;
 
@@ -45,6 +46,7 @@ public class Sale : BaseEntity
         Items = items.ToList();
         Recalculate();
         UpdatedAt = DateTime.UtcNow;
+        AddDomainEvent(new SaleModifiedEvent(this));
     }
 
     public void Cancel()
@@ -53,7 +55,17 @@ public class Sale : BaseEntity
         UpdatedAt = DateTime.UtcNow;
 
         foreach (var item in Items)
+        {
             item.Cancel();
+            AddDomainEvent(new ItemCancelledEvent(this, item));
+        }
+
+        AddDomainEvent(new SaleCancelledEvent(this));
+    }
+
+    public void RegisterCreated()
+    {
+        AddDomainEvent(new SaleCreatedEvent(this));
     }
 
     private void ValidateSaleData()
