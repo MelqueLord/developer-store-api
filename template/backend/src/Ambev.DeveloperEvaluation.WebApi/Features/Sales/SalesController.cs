@@ -1,15 +1,10 @@
-using Ambev.DeveloperEvaluation.Application.Sales.CancelSale;
 using Ambev.DeveloperEvaluation.Application.Sales.CancelSaleItem;
-using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
-using Ambev.DeveloperEvaluation.Application.Sales.GetSale;
 using Ambev.DeveloperEvaluation.Application.Sales.ListSales;
-using Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;
 using Ambev.DeveloperEvaluation.WebApi.Common;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSale;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.ListSales;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;
-using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,17 +18,14 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales;
 public class SalesController : BaseController
 {
     private readonly IMediator _mediator;
-    private readonly IMapper _mapper;
 
     /// <summary>
     /// Initializes a new instance of SalesController.
     /// </summary>
     /// <param name="mediator">The mediator instance.</param>
-    /// <param name="mapper">The AutoMapper instance.</param>
-    public SalesController(IMediator mediator, IMapper mapper)
+    public SalesController(IMediator mediator)
     {
         _mediator = mediator;
-        _mapper = mapper;
     }
 
     /// <summary>
@@ -47,48 +39,34 @@ public class SalesController : BaseController
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateSale([FromBody] CreateSaleRequest request, CancellationToken cancellationToken)
     {
-        var command = _mapper.Map<CreateSaleCommand>(request);
-        var response = await _mediator.Send(command, cancellationToken);
+        var response = await _mediator.Send(request.ToCommand(), cancellationToken);
 
         return Created(string.Empty, new ApiResponseWithData<CreateSaleResponse>
         {
             Success = true,
             Message = "Sale created successfully",
-            Data = _mapper.Map<CreateSaleResponse>(response)
+            Data = response.ToResponse()
         });
     }
 
     /// <summary>
     /// Retrieves all sales.
     /// </summary>
-    /// <param name="page">Page number.</param>
-    /// <param name="size">Page size.</param>
-    /// <param name="order">Ordering expression.</param>
-    /// <param name="saleNumber">Sale number filter.</param>
-    /// <param name="customerName">Customer name filter.</param>
-    /// <param name="branchName">Branch name filter.</param>
-    /// <param name="isCancelled">Cancellation status filter.</param>
-    /// <param name="minSaleDate">Minimum sale date filter.</param>
-    /// <param name="maxSaleDate">Maximum sale date filter.</param>
-    /// <param name="minTotalAmount">Minimum total amount filter.</param>
-    /// <param name="maxTotalAmount">Maximum total amount filter.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The sales list.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedResponse<ListSalesResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListSales(
         [FromQuery(Name = "_page")] int page = 1,
         [FromQuery(Name = "_size")] int size = 10,
-        [FromQuery(Name = "_order")] string? order,
-        [FromQuery] string? saleNumber,
-        [FromQuery] string? customerName,
-        [FromQuery] string? branchName,
-        [FromQuery] bool? isCancelled,
-        [FromQuery(Name = "_minSaleDate")] DateTime? minSaleDate,
-        [FromQuery(Name = "_maxSaleDate")] DateTime? maxSaleDate,
-        [FromQuery(Name = "_minTotalAmount")] decimal? minTotalAmount,
-        [FromQuery(Name = "_maxTotalAmount")] decimal? maxTotalAmount,
-        CancellationToken cancellationToken)
+        [FromQuery(Name = "_order")] string? order = null,
+        [FromQuery] string? saleNumber = null,
+        [FromQuery] string? customerName = null,
+        [FromQuery] string? branchName = null,
+        [FromQuery] bool? isCancelled = null,
+        [FromQuery(Name = "_minSaleDate")] DateTime? minSaleDate = null,
+        [FromQuery(Name = "_maxSaleDate")] DateTime? maxSaleDate = null,
+        [FromQuery(Name = "_minTotalAmount")] decimal? minTotalAmount = null,
+        [FromQuery(Name = "_maxTotalAmount")] decimal? maxTotalAmount = null,
+        CancellationToken cancellationToken = default)
     {
         var response = await _mediator.Send(new ListSalesCommand
         {
@@ -109,7 +87,7 @@ public class SalesController : BaseController
         {
             Success = true,
             Message = "Sales retrieved successfully",
-            Data = _mapper.Map<IEnumerable<ListSalesResponse>>(response.Items),
+            Data = response.Items.Select(sale => sale.ToResponse()),
             CurrentPage = response.CurrentPage,
             TotalPages = response.TotalPages,
             TotalCount = response.TotalCount
@@ -128,14 +106,13 @@ public class SalesController : BaseController
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSale([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var command = _mapper.Map<GetSaleCommand>(id);
-        var response = await _mediator.Send(command, cancellationToken);
+        var response = await _mediator.Send(id.ToGetSaleCommand(), cancellationToken);
 
         return Ok(new ApiResponseWithData<GetSaleResponse>
         {
             Success = true,
             Message = "Sale retrieved successfully",
-            Data = _mapper.Map<GetSaleResponse>(response)
+            Data = response.ToResponse()
         });
     }
 
@@ -152,16 +129,13 @@ public class SalesController : BaseController
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateSale([FromRoute] Guid id, [FromBody] UpdateSaleRequest request, CancellationToken cancellationToken)
     {
-        var command = _mapper.Map<UpdateSaleCommand>(request);
-        command.Id = id;
-
-        var response = await _mediator.Send(command, cancellationToken);
+        var response = await _mediator.Send(request.ToCommand(id), cancellationToken);
 
         return Ok(new ApiResponseWithData<UpdateSaleResponse>
         {
             Success = true,
             Message = "Sale updated successfully",
-            Data = _mapper.Map<UpdateSaleResponse>(response)
+            Data = response.ToResponse()
         });
     }
 
@@ -177,8 +151,7 @@ public class SalesController : BaseController
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CancelSale([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var command = _mapper.Map<CancelSaleCommand>(id);
-        await _mediator.Send(command, cancellationToken);
+        await _mediator.Send(id.ToCancelSaleCommand(), cancellationToken);
 
         return Ok(new ApiResponse
         {

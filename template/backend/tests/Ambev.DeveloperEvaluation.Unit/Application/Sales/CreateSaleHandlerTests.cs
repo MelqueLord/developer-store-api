@@ -1,9 +1,7 @@
 using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
-using Ambev.DeveloperEvaluation.Application.Sales.GetSale;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Events;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -14,62 +12,44 @@ namespace Ambev.DeveloperEvaluation.Unit.Application.Sales;
 public class CreateSaleHandlerTests
 {
     private readonly ISaleRepository _saleRepository;
-    private readonly IMapper _mapper;
     private readonly ILogger<CreateSaleHandler> _logger;
     private readonly CreateSaleHandler _handler;
 
     public CreateSaleHandlerTests()
     {
         _saleRepository = Substitute.For<ISaleRepository>();
-        _mapper = Substitute.For<IMapper>();
         _logger = Substitute.For<ILogger<CreateSaleHandler>>();
-        _handler = new CreateSaleHandler(_saleRepository, _mapper, _logger);
+        _handler = new CreateSaleHandler(_saleRepository, _logger);
     }
 
     [Fact(DisplayName = "Given valid sale data When creating sale Then recalculates and saves sale")]
     public async Task Handle_ValidRequest_RecalculatesAndSavesSale()
     {
         var command = CreateValidCommand();
-        var sale = CreateSale(command);
-        var result = new CreateSaleResult
-        {
-            Id = sale.Id,
-            SaleNumber = sale.SaleNumber,
-            TotalAmount = 36m,
-            Items =
-            [
-                new GetSaleItemResult
-                {
-                    Id = sale.Items.First().Id,
-                    ProductId = sale.Items.First().ProductId,
-                    ProductName = sale.Items.First().ProductName,
-                    Quantity = sale.Items.First().Quantity,
-                    UnitPrice = sale.Items.First().UnitPrice,
-                    DiscountPercentage = 0.10m,
-                    DiscountAmount = 4m,
-                    TotalAmount = 36m
-                }
-            ]
-        };
+        var saleId = Guid.NewGuid();
 
-        _mapper.Map<Sale>(command).Returns(sale);
         _saleRepository.CreateAsync(Arg.Any<Sale>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => callInfo.Arg<Sale>());
-        _mapper.Map<CreateSaleResult>(Arg.Any<Sale>()).Returns(result);
+            .Returns(callInfo =>
+            {
+                var sale = callInfo.Arg<Sale>();
+                sale.Id = saleId;
+                return sale;
+            });
 
         var response = await _handler.Handle(command, CancellationToken.None);
 
         response.Should().NotBeNull();
-        response.Id.Should().Be(sale.Id);
+        response.Id.Should().Be(saleId);
         response.SaleNumber.Should().Be("SALE-001");
         response.TotalAmount.Should().Be(36m);
         response.Items.Should().ContainSingle();
         response.Items[0].DiscountAmount.Should().Be(4m);
-        sale.TotalAmount.Should().Be(36m);
-        sale.DomainEvents.Should().Contain(domainEvent => domainEvent is SaleCreatedEvent);
+        response.Items[0].DiscountPercentage.Should().Be(0.10m);
 
         await _saleRepository.Received(1).CreateAsync(
-            Arg.Is<Sale>(createdSale => createdSale.TotalAmount == 36m),
+            Arg.Is<Sale>(createdSale =>
+                createdSale.TotalAmount == 36m &&
+                createdSale.DomainEvents.Any(domainEvent => domainEvent is SaleCreatedEvent)),
             Arg.Any<CancellationToken>());
     }
 
@@ -93,30 +73,6 @@ public class CreateSaleHandlerTests
                     UnitPrice = 10m
                 }
             ]
-        };
-    }
-
-    private static Sale CreateSale(CreateSaleCommand command)
-    {
-        return new Sale
-        {
-            Id = Guid.NewGuid(),
-            SaleNumber = command.SaleNumber,
-            SaleDate = command.SaleDate,
-            CustomerId = command.CustomerId,
-            CustomerName = command.CustomerName,
-            BranchId = command.BranchId,
-            BranchName = command.BranchName,
-            Items = command.Items
-                .Select(item => new SaleItem
-                {
-                    Id = Guid.NewGuid(),
-                    ProductId = item.ProductId,
-                    ProductName = item.ProductName,
-                    Quantity = item.Quantity,
-                    UnitPrice = item.UnitPrice
-                })
-                .ToList()
         };
     }
 }

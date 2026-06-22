@@ -1,9 +1,7 @@
-using Ambev.DeveloperEvaluation.Application.Sales.GetSale;
 using Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Events;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
-using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -14,16 +12,14 @@ namespace Ambev.DeveloperEvaluation.Unit.Application.Sales;
 public class UpdateSaleHandlerTests
 {
     private readonly ISaleRepository _saleRepository;
-    private readonly IMapper _mapper;
     private readonly ILogger<UpdateSaleHandler> _logger;
     private readonly UpdateSaleHandler _handler;
 
     public UpdateSaleHandlerTests()
     {
         _saleRepository = Substitute.For<ISaleRepository>();
-        _mapper = Substitute.For<IMapper>();
         _logger = Substitute.For<ILogger<UpdateSaleHandler>>();
-        _handler = new UpdateSaleHandler(_saleRepository, _mapper, _logger);
+        _handler = new UpdateSaleHandler(_saleRepository, _logger);
     }
 
     [Fact(DisplayName = "Given existing sale When updating sale Then replaces items and saves sale")]
@@ -31,33 +27,10 @@ public class UpdateSaleHandlerTests
     {
         var sale = CreateSale();
         var command = CreateValidCommand(sale.Id);
-        var updatedItems = CreateItems(command);
-        var result = new UpdateSaleResult
-        {
-            Id = sale.Id,
-            SaleNumber = command.SaleNumber,
-            TotalAmount = 80m,
-            Items =
-            [
-                new GetSaleItemResult
-                {
-                    Id = updatedItems[0].Id,
-                    ProductId = updatedItems[0].ProductId,
-                    ProductName = updatedItems[0].ProductName,
-                    Quantity = updatedItems[0].Quantity,
-                    UnitPrice = updatedItems[0].UnitPrice,
-                    DiscountPercentage = 0.20m,
-                    DiscountAmount = 20m,
-                    TotalAmount = 80m
-                }
-            ]
-        };
 
         _saleRepository.GetByIdAsync(command.Id, Arg.Any<CancellationToken>()).Returns(sale);
-        _mapper.Map<List<SaleItem>>(command.Items).Returns(updatedItems);
         _saleRepository.UpdateAsync(Arg.Any<Sale>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Sale>());
-        _mapper.Map<UpdateSaleResult>(Arg.Any<Sale>()).Returns(result);
 
         var response = await _handler.Handle(command, CancellationToken.None);
 
@@ -140,19 +113,5 @@ public class UpdateSaleHandlerTests
                 }
             ]
         };
-    }
-
-    private static List<SaleItem> CreateItems(UpdateSaleCommand command)
-    {
-        return command.Items
-            .Select(item => new SaleItem
-            {
-                Id = Guid.NewGuid(),
-                ProductId = item.ProductId,
-                ProductName = item.ProductName,
-                Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice
-            })
-            .ToList();
     }
 }

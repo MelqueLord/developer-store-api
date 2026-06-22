@@ -2,7 +2,6 @@ using Ambev.DeveloperEvaluation.Application.Sales.ListSales;
 using Ambev.DeveloperEvaluation.Common.Pagination;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
-using AutoMapper;
 using FluentAssertions;
 using NSubstitute;
 using Xunit;
@@ -12,14 +11,12 @@ namespace Ambev.DeveloperEvaluation.Unit.Application.Sales;
 public class ListSalesHandlerTests
 {
     private readonly ISaleRepository _saleRepository;
-    private readonly IMapper _mapper;
     private readonly ListSalesHandler _handler;
 
     public ListSalesHandlerTests()
     {
         _saleRepository = Substitute.For<ISaleRepository>();
-        _mapper = Substitute.For<IMapper>();
-        _handler = new ListSalesHandler(_saleRepository, _mapper);
+        _handler = new ListSalesHandler(_saleRepository);
     }
 
     [Fact(DisplayName = "Given existing sales When listing sales Then returns mapped sales")]
@@ -30,15 +27,6 @@ public class ListSalesHandlerTests
             CreateSale("SALE-001"),
             CreateSale("SALE-002")
         };
-
-        var results = sales
-            .Select(sale => new ListSalesResult
-            {
-                Id = sale.Id,
-                SaleNumber = sale.SaleNumber,
-                TotalAmount = sale.TotalAmount
-            })
-            .ToList();
 
         var command = new ListSalesCommand
         {
@@ -63,7 +51,6 @@ public class ListSalesHandlerTests
                 command.MaxTotalAmount,
                 Arg.Any<CancellationToken>())
             .Returns(new PagedResult<Sale>(sales, 12, command.Page, command.Size));
-        _mapper.Map<IReadOnlyCollection<ListSalesResult>>(sales).Returns(results);
 
         var response = await _handler.Handle(command, CancellationToken.None);
 

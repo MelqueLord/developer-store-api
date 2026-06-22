@@ -1,6 +1,5 @@
-using Ambev.DeveloperEvaluation.Domain.Entities;
+using Ambev.DeveloperEvaluation.Application.Sales;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
-using AutoMapper;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -12,19 +11,16 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
 public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, CreateSaleResult>
 {
     private readonly ISaleRepository _saleRepository;
-    private readonly IMapper _mapper;
     private readonly ILogger<CreateSaleHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of CreateSaleHandler.
     /// </summary>
     /// <param name="saleRepository">The sale repository.</param>
-    /// <param name="mapper">The AutoMapper instance.</param>
     /// <param name="logger">The application logger.</param>
-    public CreateSaleHandler(ISaleRepository saleRepository, IMapper mapper, ILogger<CreateSaleHandler> logger)
+    public CreateSaleHandler(ISaleRepository saleRepository, ILogger<CreateSaleHandler> logger)
     {
         _saleRepository = saleRepository;
-        _mapper = mapper;
         _logger = logger;
     }
 
@@ -36,7 +32,7 @@ public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, CreateSaleRe
     /// <returns>The created sale details.</returns>
     public async Task<CreateSaleResult> Handle(CreateSaleCommand command, CancellationToken cancellationToken)
     {
-        var sale = _mapper.Map<Sale>(command);
+        var sale = command.ToEntity();
         sale.Recalculate();
         sale.RegisterCreated();
 
@@ -44,6 +40,6 @@ public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, CreateSaleRe
 
         _logger.LogInformation("SaleCreated event: {SaleId}", createdSale.Id);
 
-        return _mapper.Map<CreateSaleResult>(createdSale);
+        return createdSale.ToCreateSaleResult();
     }
 }
