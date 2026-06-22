@@ -1,4 +1,5 @@
 using Ambev.DeveloperEvaluation.Domain.Entities;
+using Ambev.DeveloperEvaluation.Domain.Events;
 using Xunit;
 
 namespace Ambev.DeveloperEvaluation.Unit.Domain.Entities;
@@ -53,6 +54,38 @@ public class SaleTests
         sale.Cancel();
 
         Assert.Throws<DomainException>(() => sale.ReplaceItems([CreateItem(quantity: 1, unitPrice: 10m)]));
+    }
+
+    [Fact(DisplayName = "Created sale should register SaleCreated event")]
+    public void Given_Sale_When_RegisterCreated_Then_ShouldAddSaleCreatedEvent()
+    {
+        var sale = CreateSale();
+
+        sale.RegisterCreated();
+
+        Assert.Contains(sale.DomainEvents, domainEvent => domainEvent is SaleCreatedEvent);
+    }
+
+    [Fact(DisplayName = "Modified sale should register SaleModified event")]
+    public void Given_Sale_When_ReplaceItems_Then_ShouldAddSaleModifiedEvent()
+    {
+        var sale = CreateSale();
+
+        sale.ReplaceItems([CreateItem(quantity: 4, unitPrice: 10m)]);
+
+        Assert.Contains(sale.DomainEvents, domainEvent => domainEvent is SaleModifiedEvent);
+    }
+
+    [Fact(DisplayName = "Cancelled sale should register cancellation events")]
+    public void Given_SaleWithItems_When_Cancel_Then_ShouldAddCancellationEvents()
+    {
+        var sale = CreateSale();
+        sale.Items.Add(CreateItem(quantity: 3, unitPrice: 10m));
+
+        sale.Cancel();
+
+        Assert.Contains(sale.DomainEvents, domainEvent => domainEvent is SaleCancelledEvent);
+        Assert.Contains(sale.DomainEvents, domainEvent => domainEvent is ItemCancelledEvent);
     }
 
     private static Sale CreateSale()
