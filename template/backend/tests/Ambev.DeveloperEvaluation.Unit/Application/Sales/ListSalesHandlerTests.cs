@@ -1,4 +1,5 @@
 using Ambev.DeveloperEvaluation.Application.Sales.ListSales;
+using Ambev.DeveloperEvaluation.Common.Pagination;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using AutoMapper;
@@ -39,15 +40,53 @@ public class ListSalesHandlerTests
             })
             .ToList();
 
-        _saleRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(sales);
-        _mapper.Map<IEnumerable<ListSalesResult>>(sales).Returns(results);
+        var command = new ListSalesCommand
+        {
+            Page = 2,
+            Size = 5,
+            Order = "saleNumber asc",
+            CustomerName = "Test*",
+            IsCancelled = false
+        };
 
-        var response = await _handler.Handle(new ListSalesCommand(), CancellationToken.None);
+        _saleRepository.GetPagedAsync(
+                command.Page,
+                command.Size,
+                command.Order,
+                command.SaleNumber,
+                command.CustomerName,
+                command.BranchName,
+                command.IsCancelled,
+                command.MinSaleDate,
+                command.MaxSaleDate,
+                command.MinTotalAmount,
+                command.MaxTotalAmount,
+                Arg.Any<CancellationToken>())
+            .Returns(new PagedResult<Sale>(sales, 12, command.Page, command.Size));
+        _mapper.Map<IReadOnlyCollection<ListSalesResult>>(sales).Returns(results);
 
-        response.Should().HaveCount(2);
-        response.Select(sale => sale.SaleNumber).Should().Contain(["SALE-001", "SALE-002"]);
+        var response = await _handler.Handle(command, CancellationToken.None);
 
-        await _saleRepository.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        response.Items.Should().HaveCount(2);
+        response.Items.Select(sale => sale.SaleNumber).Should().Contain(["SALE-001", "SALE-002"]);
+        response.CurrentPage.Should().Be(2);
+        response.PageSize.Should().Be(5);
+        response.TotalPages.Should().Be(3);
+        response.TotalCount.Should().Be(12);
+
+        await _saleRepository.Received(1).GetPagedAsync(
+            command.Page,
+            command.Size,
+            command.Order,
+            command.SaleNumber,
+            command.CustomerName,
+            command.BranchName,
+            command.IsCancelled,
+            command.MinSaleDate,
+            command.MaxSaleDate,
+            command.MinTotalAmount,
+            command.MaxTotalAmount,
+            Arg.Any<CancellationToken>());
     }
 
     private static Sale CreateSale(string saleNumber)

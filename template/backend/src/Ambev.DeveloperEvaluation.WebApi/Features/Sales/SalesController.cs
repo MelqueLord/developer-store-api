@@ -60,19 +60,58 @@ public class SalesController : BaseController
     /// <summary>
     /// Retrieves all sales.
     /// </summary>
+    /// <param name="page">Page number.</param>
+    /// <param name="size">Page size.</param>
+    /// <param name="order">Ordering expression.</param>
+    /// <param name="saleNumber">Sale number filter.</param>
+    /// <param name="customerName">Customer name filter.</param>
+    /// <param name="branchName">Branch name filter.</param>
+    /// <param name="isCancelled">Cancellation status filter.</param>
+    /// <param name="minSaleDate">Minimum sale date filter.</param>
+    /// <param name="maxSaleDate">Maximum sale date filter.</param>
+    /// <param name="minTotalAmount">Minimum total amount filter.</param>
+    /// <param name="maxTotalAmount">Maximum total amount filter.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The sales list.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(ApiResponseWithData<IEnumerable<ListSalesResponse>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ListSales(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PaginatedResponse<ListSalesResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListSales(
+        [FromQuery(Name = "_page")] int page = 1,
+        [FromQuery(Name = "_size")] int size = 10,
+        [FromQuery(Name = "_order")] string? order,
+        [FromQuery] string? saleNumber,
+        [FromQuery] string? customerName,
+        [FromQuery] string? branchName,
+        [FromQuery] bool? isCancelled,
+        [FromQuery(Name = "_minSaleDate")] DateTime? minSaleDate,
+        [FromQuery(Name = "_maxSaleDate")] DateTime? maxSaleDate,
+        [FromQuery(Name = "_minTotalAmount")] decimal? minTotalAmount,
+        [FromQuery(Name = "_maxTotalAmount")] decimal? maxTotalAmount,
+        CancellationToken cancellationToken)
     {
-        var response = await _mediator.Send(new ListSalesCommand(), cancellationToken);
+        var response = await _mediator.Send(new ListSalesCommand
+        {
+            Page = page,
+            Size = size,
+            Order = order,
+            SaleNumber = saleNumber,
+            CustomerName = customerName,
+            BranchName = branchName,
+            IsCancelled = isCancelled,
+            MinSaleDate = minSaleDate,
+            MaxSaleDate = maxSaleDate,
+            MinTotalAmount = minTotalAmount,
+            MaxTotalAmount = maxTotalAmount
+        }, cancellationToken);
 
-        return Ok(new ApiResponseWithData<IEnumerable<ListSalesResponse>>
+        return new OkObjectResult(new PaginatedResponse<ListSalesResponse>
         {
             Success = true,
             Message = "Sales retrieved successfully",
-            Data = _mapper.Map<IEnumerable<ListSalesResponse>>(response)
+            Data = _mapper.Map<IEnumerable<ListSalesResponse>>(response.Items),
+            CurrentPage = response.CurrentPage,
+            TotalPages = response.TotalPages,
+            TotalCount = response.TotalCount
         });
     }
 
