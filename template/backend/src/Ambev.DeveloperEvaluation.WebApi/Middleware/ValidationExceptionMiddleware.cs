@@ -24,6 +24,14 @@ namespace Ambev.DeveloperEvaluation.WebApi.Middleware
             {
                 await HandleValidationExceptionAsync(context, ex);
             }
+            catch (DomainException ex)
+            {
+                await HandleExceptionAsync(context, StatusCodes.Status400BadRequest, ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                await HandleExceptionAsync(context, StatusCodes.Status404NotFound, ex.Message);
+            }
         }
 
         private static Task HandleValidationExceptionAsync(HttpContext context, ValidationException exception)
@@ -37,6 +45,25 @@ namespace Ambev.DeveloperEvaluation.WebApi.Middleware
                 Message = "Validation Failed",
                 Errors = exception.Errors
                     .Select(error => (ValidationErrorDetail)error)
+            };
+
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+
+            return context.Response.WriteAsync(JsonSerializer.Serialize(response, jsonOptions));
+        }
+
+        private static Task HandleExceptionAsync(HttpContext context, int statusCode, string message)
+        {
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = statusCode;
+
+            var response = new ApiResponse
+            {
+                Success = false,
+                Message = message
             };
 
             var jsonOptions = new JsonSerializerOptions
