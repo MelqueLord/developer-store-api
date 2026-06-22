@@ -108,7 +108,7 @@ public class SalesController : BaseController
     {
         var response = await _mediator.Send(id.ToGetSaleCommand(), cancellationToken);
 
-        return Ok(new ApiResponseWithData<GetSaleResponse>
+        return new OkObjectResult(new ApiResponseWithData<GetSaleResponse>
         {
             Success = true,
             Message = "Sale retrieved successfully",
@@ -131,7 +131,7 @@ public class SalesController : BaseController
     {
         var response = await _mediator.Send(request.ToCommand(id), cancellationToken);
 
-        return Ok(new ApiResponseWithData<UpdateSaleResponse>
+        return new OkObjectResult(new ApiResponseWithData<UpdateSaleResponse>
         {
             Success = true,
             Message = "Sale updated successfully",

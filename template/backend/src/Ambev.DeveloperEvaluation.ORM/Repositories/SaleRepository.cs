@@ -29,6 +29,7 @@ public class SaleRepository : ISaleRepository
     /// <returns>The created sale.</returns>
     public async Task<Sale> CreateAsync(Sale sale, CancellationToken cancellationToken = default)
     {
+        EnsureIds(sale);
         await _context.Sales.AddAsync(sale, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
         return sale;
@@ -109,6 +110,7 @@ public class SaleRepository : ISaleRepository
     /// <returns>The updated sale.</returns>
     public async Task<Sale> UpdateAsync(Sale sale, CancellationToken cancellationToken = default)
     {
+        EnsureIds(sale);
         _context.Sales.Update(sale);
         await _context.SaveChangesAsync(cancellationToken);
         return sale;
@@ -240,5 +242,14 @@ public class SaleRepository : ISaleRepository
             return memberExpression.Member.Name;
 
         throw new ArgumentException("Expression must be a property access.", nameof(property));
+    }
+
+    private static void EnsureIds(Sale sale)
+    {
+        if (sale.Id == Guid.Empty)
+            sale.Id = Guid.NewGuid();
+
+        foreach (var item in sale.Items.Where(item => item.Id == Guid.Empty))
+            item.Id = Guid.NewGuid();
     }
 }
