@@ -1,77 +1,217 @@
-# Developer Evaluation Project
+# Developer Store API
 
-`READ CAREFULLY`
+API REST em .NET 8 para gerenciamento de vendas da DeveloperStore, implementada com DDD, CQRS/MediatR, Entity Framework Core e PostgreSQL.
+
+## Repositorio
+
+Repositorio publico para avaliacao:
+
+https://github.com/MelqueLord/developer-store-api
 
 ## Use Case
-**You are a developer on the DeveloperStore team. Now we need to implement the API prototypes.**
 
-As we work with `DDD`, to reference entities from other domains, we use the `External Identities` pattern with denormalization of entity descriptions.
+O projeto implementa uma API completa para registros de vendas, usando o padrao External Identities para referenciar entidades de outros dominios e manter descricoes denormalizadas.
 
-Therefore, you will write an API (complete CRUD) that handles sales records. The API needs to be able to inform:
+A venda informa:
 
-* Sale number
-* Date when the sale was made
-* Customer
-* Total sale amount
-* Branch where the sale was made
-* Products
-* Quantities
-* Unit prices
-* Discounts
-* Total amount for each item
-* Cancelled/Not Cancelled
+- Numero da venda
+- Data da venda
+- Cliente
+- Valor total da venda
+- Filial
+- Produtos
+- Quantidades
+- Precos unitarios
+- Descontos
+- Valor total de cada item
+- Status cancelada/nao cancelada
 
-It's not mandatory, but it would be a differential to build code for publishing events of:
-* SaleCreated
-* SaleModified
-* SaleCancelled
-* ItemCancelled
+Tambem foram implementados eventos de dominio, registrados no log da aplicacao:
 
-If you write the code, **it's not required** to actually publish to any Message Broker. You can log a message in the application log or however you find most convenient.
+- `SaleCreated`
+- `SaleModified`
+- `SaleCancelled`
+- `ItemCancelled`
 
-### Business Rules
+## Regras De Negocio
 
-* Purchases above 4 identical items have a 10% discount
-* Purchases between 10 and 20 identical items have a 20% discount
-* It's not possible to sell above 20 identical items
-* Purchases below 4 items cannot have a discount
-
-These business rules define quantity-based discounting tiers and limitations:
-
-1. Discount Tiers:
-   - 4+ items: 10% discount
-   - 10-20 items: 20% discount
-
-2. Restrictions:
-   - Maximum limit: 20 items per product
-   - No discounts allowed for quantities below 4 items
-
-## Overview
-This section provides a high-level overview of the project and the various skills and competencies it aims to assess for developer candidates. 
-
-See [Overview](/.doc/overview.md)
+- Compras com 4 a 9 unidades identicas recebem 10% de desconto.
+- Compras com 10 a 20 unidades identicas recebem 20% de desconto.
+- Nao e permitido vender mais de 20 unidades identicas do mesmo produto.
+- Compras com menos de 4 unidades nao recebem desconto.
+- O total da venda considera apenas itens nao cancelados.
+- Uma venda cancelada nao pode ser alterada.
 
 ## Tech Stack
-This section lists the key technologies used in the project, including the backend, testing, frontend, and database components. 
 
-See [Tech Stack](/.doc/tech-stack.md)
+- .NET 8
+- ASP.NET Core Web API
+- Entity Framework Core
+- PostgreSQL
+- MediatR
+- AutoMapper
+- FluentValidation
+- Serilog
+- xUnit, FluentAssertions, NSubstitute e Bogus
+- Docker e Docker Compose
 
-## Frameworks
-This section outlines the frameworks and libraries that are leveraged in the project to enhance development productivity and maintainability. 
+## Estrutura Do Projeto
 
-See [Frameworks](/.doc/frameworks.md)
+```text
+template/backend
+|-- src
+|   |-- Ambev.DeveloperEvaluation.WebApi
+|   |-- Ambev.DeveloperEvaluation.Application
+|   |-- Ambev.DeveloperEvaluation.Domain
+|   |-- Ambev.DeveloperEvaluation.ORM
+|   |-- Ambev.DeveloperEvaluation.Common
+|   `-- Ambev.DeveloperEvaluation.IoC
+`-- tests
+    |-- Ambev.DeveloperEvaluation.Unit
+    |-- Ambev.DeveloperEvaluation.Integration
+    `-- Ambev.DeveloperEvaluation.Functional
+```
 
-<!-- 
-## API Structure
-This section includes links to the detailed documentation for the different API resources:
-- [API General](./docs/general-api.md)
-- [Products API](/.doc/products-api.md)
-- [Carts API](/.doc/carts-api.md)
-- [Users API](/.doc/users-api.md)
-- [Auth API](/.doc/auth-api.md)
--->
+## Pre-requisitos
 
-## Project Structure
-This section describes the overall structure and organization of the project files and directories. 
+- .NET SDK 8.0
+- Docker Desktop
+- Git
 
-See [Project Structure](/.doc/project-structure.md)
+## Configuracao
+
+Clone o repositorio:
+
+```bash
+git clone https://github.com/MelqueLord/developer-store-api.git
+cd developer-store-api/template/backend
+```
+
+A connection string padrao da API esta configurada para o PostgreSQL local exposto pelo `docker-compose.yml`:
+
+```json
+"DefaultConnection": "Host=localhost;Port=5432;Database=developer_evaluation;Username=developer;Password=ev@luAt10n"
+```
+
+Quando a API roda dentro do Docker Compose, a connection string e sobrescrita para usar o host interno do servico PostgreSQL:
+
+```text
+Host=ambev.developerevaluation.database;Port=5432;Database=developer_evaluation;Username=developer;Password=ev@luAt10n
+```
+
+## Executando Com Docker
+
+Na pasta `template/backend`, execute:
+
+```bash
+docker compose up --build
+```
+
+A API ficara disponivel em:
+
+```text
+http://localhost:8080
+```
+
+Swagger, em ambiente de desenvolvimento:
+
+```text
+http://localhost:8080/swagger
+```
+
+## Executando Localmente
+
+Suba somente os servicos de infraestrutura:
+
+```bash
+docker compose up -d ambev.developerevaluation.database ambev.developerevaluation.nosql ambev.developerevaluation.cache
+```
+
+Restaure as dependencias:
+
+```bash
+dotnet restore Ambev.DeveloperEvaluation.sln
+```
+
+Aplique as migrations:
+
+```bash
+dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
+```
+
+Execute a API:
+
+```bash
+dotnet run --project src/Ambev.DeveloperEvaluation.WebApi
+```
+
+## Testes
+
+Na pasta `template/backend`, execute:
+
+```bash
+dotnet test Ambev.DeveloperEvaluation.sln
+```
+
+Para gerar relatorio de cobertura:
+
+```bash
+./coverage-report.sh
+```
+
+No Windows:
+
+```powershell
+.\coverage-report.bat
+```
+
+## Endpoints De Sales
+
+- `POST /api/sales` cria uma venda.
+- `GET /api/sales` lista vendas com paginacao, ordenacao e filtros.
+- `GET /api/sales/{id}` busca uma venda por id.
+- `PUT /api/sales/{id}` atualiza uma venda.
+- `DELETE /api/sales/{id}` cancela uma venda.
+- `DELETE /api/sales/{saleId}/items/{itemId}` cancela um item da venda.
+
+Filtros disponiveis na listagem:
+
+- `_page`
+- `_size`
+- `_order`
+- `saleNumber`
+- `customerName`
+- `branchName`
+- `isCancelled`
+- `_minSaleDate`
+- `_maxSaleDate`
+- `_minTotalAmount`
+- `_maxTotalAmount`
+
+## Exemplo De Criacao De Venda
+
+```json
+{
+  "saleNumber": "SALE-0001",
+  "saleDate": "2026-06-22T10:00:00Z",
+  "customerId": "11111111-1111-1111-1111-111111111111",
+  "customerName": "Customer Example",
+  "branchId": "22222222-2222-2222-2222-222222222222",
+  "branchName": "Main Branch",
+  "items": [
+    {
+      "productId": "33333333-3333-3333-3333-333333333333",
+      "productName": "Product Example",
+      "quantity": 10,
+      "unitPrice": 100.00
+    }
+  ]
+}
+```
+
+## Documentacao Complementar
+
+- [Overview](./.doc/overview.md)
+- [Tech Stack](./.doc/tech-stack.md)
+- [Frameworks](./.doc/frameworks.md)
+- [Project Structure](./.doc/project-structure.md)
