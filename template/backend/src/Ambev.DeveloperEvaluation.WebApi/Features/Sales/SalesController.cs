@@ -1,8 +1,10 @@
 using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.Application.Sales.GetSale;
+using Ambev.DeveloperEvaluation.Application.Sales.ListSales;
 using Ambev.DeveloperEvaluation.WebApi.Common;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSale;
+using Ambev.DeveloperEvaluation.WebApi.Features.Sales.ListSales;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -55,6 +57,25 @@ public class SalesController : BaseController
             Success = true,
             Message = "Sale created successfully",
             Data = _mapper.Map<CreateSaleResponse>(response)
+        });
+    }
+
+    /// <summary>
+    /// Retrieves all sales.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The sales list.</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(ApiResponseWithData<IEnumerable<ListSalesResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListSales(CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(new ListSalesCommand(), cancellationToken);
+
+        return Ok(new ApiResponseWithData<IEnumerable<ListSalesResponse>>
+        {
+            Success = true,
+            Message = "Sales retrieved successfully",
+            Data = _mapper.Map<IEnumerable<ListSalesResponse>>(response)
         });
     }
 
