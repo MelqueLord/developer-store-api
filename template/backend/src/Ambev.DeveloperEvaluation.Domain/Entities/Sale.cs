@@ -63,6 +63,21 @@ public class Sale : BaseEntity
         AddDomainEvent(new SaleCancelledEvent(this));
     }
 
+    public void CancelItem(Guid itemId)
+    {
+        if (IsCancelled)
+            throw new DomainException("Cannot cancel an item from a cancelled sale");
+
+        var item = Items.FirstOrDefault(item => item.Id == itemId);
+        if (item == null)
+            throw new DomainException("Sale item not found");
+
+        item.Cancel();
+        Recalculate();
+        UpdatedAt = DateTime.UtcNow;
+        AddDomainEvent(new ItemCancelledEvent(this, item));
+    }
+
     public void RegisterCreated()
     {
         AddDomainEvent(new SaleCreatedEvent(this));

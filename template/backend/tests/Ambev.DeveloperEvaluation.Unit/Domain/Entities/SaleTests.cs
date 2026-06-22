@@ -88,6 +88,25 @@ public class SaleTests
         Assert.Contains(sale.DomainEvents, domainEvent => domainEvent is ItemCancelledEvent);
     }
 
+    [Fact(DisplayName = "Sale item cancellation should recalculate total and register event")]
+    public void Given_SaleWithItems_When_CancelItem_Then_ShouldRecalculateTotalAndAddEvent()
+    {
+        var itemToCancel = CreateItem(quantity: 3, unitPrice: 10m);
+        var activeItem = CreateItem(quantity: 4, unitPrice: 10m);
+        var sale = CreateSale();
+        sale.Items.Add(itemToCancel);
+        sale.Items.Add(activeItem);
+        sale.Recalculate();
+
+        sale.CancelItem(itemToCancel.Id);
+
+        Assert.True(itemToCancel.IsCancelled);
+        Assert.False(activeItem.IsCancelled);
+        Assert.Equal(36m, sale.TotalAmount);
+        Assert.NotNull(sale.UpdatedAt);
+        Assert.Contains(sale.DomainEvents, domainEvent => domainEvent is ItemCancelledEvent);
+    }
+
     private static Sale CreateSale()
     {
         return new Sale
@@ -104,6 +123,7 @@ public class SaleTests
     {
         return new SaleItem
         {
+            Id = Guid.NewGuid(),
             ProductId = Guid.NewGuid(),
             ProductName = "Test product",
             Quantity = quantity,
