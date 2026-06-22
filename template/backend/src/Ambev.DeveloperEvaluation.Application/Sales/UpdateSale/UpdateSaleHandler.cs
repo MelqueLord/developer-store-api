@@ -1,5 +1,5 @@
-using Ambev.DeveloperEvaluation.Application.Sales;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using AutoMapper;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -12,16 +12,18 @@ public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, UpdateSaleRe
 {
     private readonly ISaleRepository _saleRepository;
     private readonly ILogger<UpdateSaleHandler> _logger;
+    private readonly IMapper _mapper;
 
     /// <summary>
     /// Initializes a new instance of UpdateSaleHandler.
     /// </summary>
     /// <param name="saleRepository">The sale repository.</param>
     /// <param name="logger">The application logger.</param>
-    public UpdateSaleHandler(ISaleRepository saleRepository, ILogger<UpdateSaleHandler> logger)
+    public UpdateSaleHandler(ISaleRepository saleRepository, ILogger<UpdateSaleHandler> logger, IMapper mapper)
     {
         _saleRepository = saleRepository;
         _logger = logger;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -42,12 +44,12 @@ public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, UpdateSaleRe
         sale.CustomerName = command.CustomerName;
         sale.BranchId = command.BranchId;
         sale.BranchName = command.BranchName;
-        sale.ReplaceItems(command.Items.Select(item => item.ToEntity()).ToList());
+        sale.ReplaceItems(_mapper.Map<List<Domain.Entities.SaleItem>>(command.Items));
 
         var updatedSale = await _saleRepository.UpdateAsync(sale, cancellationToken);
 
         _logger.LogInformation("SaleModified event: {SaleId}", updatedSale.Id);
 
-        return updatedSale.ToUpdateSaleResult();
+        return _mapper.Map<UpdateSaleResult>(updatedSale);
     }
 }

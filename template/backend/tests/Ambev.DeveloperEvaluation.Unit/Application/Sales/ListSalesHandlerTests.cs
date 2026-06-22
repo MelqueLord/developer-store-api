@@ -2,6 +2,8 @@ using Ambev.DeveloperEvaluation.Application.Sales.ListSales;
 using Ambev.DeveloperEvaluation.Common.Pagination;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using Ambev.DeveloperEvaluation.Unit.Application.Mapping;
+using AutoMapper;
 using FluentAssertions;
 using NSubstitute;
 using Xunit;
@@ -11,12 +13,14 @@ namespace Ambev.DeveloperEvaluation.Unit.Application.Sales;
 public class ListSalesHandlerTests
 {
     private readonly ISaleRepository _saleRepository;
+    private readonly IMapper _mapper;
     private readonly ListSalesHandler _handler;
 
     public ListSalesHandlerTests()
     {
         _saleRepository = Substitute.For<ISaleRepository>();
-        _handler = new ListSalesHandler(_saleRepository);
+        _mapper = MapperFactory.Create();
+        _handler = new ListSalesHandler(_saleRepository, _mapper);
     }
 
     [Fact(DisplayName = "Given existing sales When listing sales Then returns mapped sales")]

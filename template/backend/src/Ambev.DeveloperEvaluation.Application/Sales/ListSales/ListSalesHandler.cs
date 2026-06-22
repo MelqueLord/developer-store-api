@@ -1,6 +1,6 @@
-using Ambev.DeveloperEvaluation.Application.Sales;
 using Ambev.DeveloperEvaluation.Common.Pagination;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using AutoMapper;
 using MediatR;
 
 namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
@@ -11,14 +11,16 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
 public class ListSalesHandler : IRequestHandler<ListSalesCommand, PagedResult<ListSalesResult>>
 {
     private readonly ISaleRepository _saleRepository;
+    private readonly IMapper _mapper;
 
     /// <summary>
     /// Initializes a new instance of ListSalesHandler.
     /// </summary>
     /// <param name="saleRepository">The sale repository.</param>
-    public ListSalesHandler(ISaleRepository saleRepository)
+    public ListSalesHandler(ISaleRepository saleRepository, IMapper mapper)
     {
         _saleRepository = saleRepository;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -46,7 +48,7 @@ public class ListSalesHandler : IRequestHandler<ListSalesCommand, PagedResult<Li
             request.MaxTotalAmount,
             cancellationToken);
 
-        var results = sales.Items.Select(sale => sale.ToListSalesResult()).ToList();
+        var results = _mapper.Map<List<ListSalesResult>>(sales.Items);
         return new PagedResult<ListSalesResult>(results, sales.TotalCount, sales.CurrentPage, sales.PageSize);
     }
 }

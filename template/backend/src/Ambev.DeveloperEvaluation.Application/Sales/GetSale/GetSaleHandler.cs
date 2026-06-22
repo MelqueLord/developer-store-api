@@ -1,5 +1,5 @@
-using Ambev.DeveloperEvaluation.Application.Sales;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using AutoMapper;
 using MediatR;
 
 namespace Ambev.DeveloperEvaluation.Application.Sales.GetSale;
@@ -10,14 +10,16 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.GetSale;
 public class GetSaleHandler : IRequestHandler<GetSaleCommand, GetSaleResult>
 {
     private readonly ISaleRepository _saleRepository;
+    private readonly IMapper _mapper;
 
     /// <summary>
     /// Initializes a new instance of GetSaleHandler.
     /// </summary>
     /// <param name="saleRepository">The sale repository.</param>
-    public GetSaleHandler(ISaleRepository saleRepository)
+    public GetSaleHandler(ISaleRepository saleRepository, IMapper mapper)
     {
         _saleRepository = saleRepository;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -32,6 +34,6 @@ public class GetSaleHandler : IRequestHandler<GetSaleCommand, GetSaleResult>
         if (sale == null)
             throw new KeyNotFoundException($"Sale with ID {request.Id} not found");
 
-        return sale.ToGetSaleResult();
+        return _mapper.Map<GetSaleResult>(sale);
     }
 }

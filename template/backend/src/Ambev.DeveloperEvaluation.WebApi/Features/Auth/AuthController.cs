@@ -1,5 +1,6 @@
 using Ambev.DeveloperEvaluation.WebApi.Common;
 using Ambev.DeveloperEvaluation.WebApi.Features.Auth.AuthenticateUserFeature;
+using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,14 +14,16 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Auth;
 public class AuthController : BaseController
 {
     private readonly IMediator _mediator;
+    private readonly IMapper _mapper;
 
     /// <summary>
     /// Initializes a new instance of AuthController
     /// </summary>
     /// <param name="mediator">The mediator instance</param>
-    public AuthController(IMediator mediator)
+    public AuthController(IMediator mediator, IMapper mapper)
     {
         _mediator = mediator;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -41,13 +44,13 @@ public class AuthController : BaseController
         if (!validationResult.IsValid)
             return BadRequest(validationResult.Errors);
 
-        var response = await _mediator.Send(request.ToCommand(), cancellationToken);
+        var response = await _mediator.Send(_mapper.Map<Application.Auth.AuthenticateUser.AuthenticateUserCommand>(request), cancellationToken);
 
         return Ok(new ApiResponseWithData<AuthenticateUserResponse>
         {
             Success = true,
             Message = "User authenticated successfully",
-            Data = response.ToResponse()
+            Data = _mapper.Map<AuthenticateUserResponse>(response)
         });
     }
 }

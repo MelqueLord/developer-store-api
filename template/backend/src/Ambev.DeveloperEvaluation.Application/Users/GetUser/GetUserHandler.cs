@@ -1,5 +1,5 @@
-using Ambev.DeveloperEvaluation.Application.Users;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using AutoMapper;
 using FluentValidation;
 using MediatR;
 
@@ -11,14 +11,16 @@ namespace Ambev.DeveloperEvaluation.Application.Users.GetUser;
 public class GetUserHandler : IRequestHandler<GetUserCommand, GetUserResult>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IMapper _mapper;
 
     /// <summary>
     /// Initializes a new instance of GetUserHandler
     /// </summary>
     /// <param name="userRepository">The user repository</param>
-    public GetUserHandler(IUserRepository userRepository)
+    public GetUserHandler(IUserRepository userRepository, IMapper mapper)
     {
         _userRepository = userRepository;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -39,6 +41,6 @@ public class GetUserHandler : IRequestHandler<GetUserCommand, GetUserResult>
         if (user == null)
             throw new KeyNotFoundException($"User with ID {request.Id} not found");
 
-        return user.ToGetUserResult();
+        return _mapper.Map<GetUserResult>(user);
     }
 }

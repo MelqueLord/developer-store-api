@@ -2,6 +2,8 @@ using Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Events;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using Ambev.DeveloperEvaluation.Unit.Application.Mapping;
+using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -13,13 +15,15 @@ public class UpdateSaleHandlerTests
 {
     private readonly ISaleRepository _saleRepository;
     private readonly ILogger<UpdateSaleHandler> _logger;
+    private readonly IMapper _mapper;
     private readonly UpdateSaleHandler _handler;
 
     public UpdateSaleHandlerTests()
     {
         _saleRepository = Substitute.For<ISaleRepository>();
         _logger = Substitute.For<ILogger<UpdateSaleHandler>>();
-        _handler = new UpdateSaleHandler(_saleRepository, _logger);
+        _mapper = MapperFactory.Create();
+        _handler = new UpdateSaleHandler(_saleRepository, _logger, _mapper);
     }
 
     [Fact(DisplayName = "Given existing sale When updating sale Then replaces items and saves sale")]

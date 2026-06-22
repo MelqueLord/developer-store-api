@@ -5,6 +5,7 @@ using Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSale;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.ListSales;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;
+using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,14 +19,16 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales;
 public class SalesController : BaseController
 {
     private readonly IMediator _mediator;
+    private readonly IMapper _mapper;
 
     /// <summary>
     /// Initializes a new instance of SalesController.
     /// </summary>
     /// <param name="mediator">The mediator instance.</param>
-    public SalesController(IMediator mediator)
+    public SalesController(IMediator mediator, IMapper mapper)
     {
         _mediator = mediator;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -39,13 +42,13 @@ public class SalesController : BaseController
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateSale([FromBody] CreateSaleRequest request, CancellationToken cancellationToken)
     {
-        var response = await _mediator.Send(request.ToCommand(), cancellationToken);
+        var response = await _mediator.Send(_mapper.Map<Application.Sales.CreateSale.CreateSaleCommand>(request), cancellationToken);
 
         return Created(string.Empty, new ApiResponseWithData<CreateSaleResponse>
         {
             Success = true,
             Message = "Sale created successfully",
-            Data = response.ToResponse()
+            Data = _mapper.Map<CreateSaleResponse>(response)
         });
     }
 
@@ -87,7 +90,7 @@ public class SalesController : BaseController
         {
             Success = true,
             Message = "Sales retrieved successfully",
-            Data = response.Items.Select(sale => sale.ToResponse()),
+            Data = _mapper.Map<IEnumerable<ListSalesResponse>>(response.Items),
             CurrentPage = response.CurrentPage,
             TotalPages = response.TotalPages,
             TotalCount = response.TotalCount
@@ -106,13 +109,13 @@ public class SalesController : BaseController
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSale([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var response = await _mediator.Send(id.ToGetSaleCommand(), cancellationToken);
+        var response = await _mediator.Send(_mapper.Map<Application.Sales.GetSale.GetSaleCommand>(id), cancellationToken);
 
         return new OkObjectResult(new ApiResponseWithData<GetSaleResponse>
         {
             Success = true,
             Message = "Sale retrieved successfully",
-            Data = response.ToResponse()
+            Data = _mapper.Map<GetSaleResponse>(response)
         });
     }
 
@@ -129,13 +132,16 @@ public class SalesController : BaseController
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateSale([FromRoute] Guid id, [FromBody] UpdateSaleRequest request, CancellationToken cancellationToken)
     {
-        var response = await _mediator.Send(request.ToCommand(id), cancellationToken);
+        var command = _mapper.Map<Application.Sales.UpdateSale.UpdateSaleCommand>(request);
+        command.Id = id;
+
+        var response = await _mediator.Send(command, cancellationToken);
 
         return new OkObjectResult(new ApiResponseWithData<UpdateSaleResponse>
         {
             Success = true,
             Message = "Sale updated successfully",
-            Data = response.ToResponse()
+            Data = _mapper.Map<UpdateSaleResponse>(response)
         });
     }
 
@@ -151,7 +157,7 @@ public class SalesController : BaseController
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CancelSale([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(id.ToCancelSaleCommand(), cancellationToken);
+        await _mediator.Send(_mapper.Map<Application.Sales.CancelSale.CancelSaleCommand>(id), cancellationToken);
 
         return Ok(new ApiResponse
         {

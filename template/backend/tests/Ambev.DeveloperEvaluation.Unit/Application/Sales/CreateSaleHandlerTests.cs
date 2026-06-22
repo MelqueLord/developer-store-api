@@ -2,6 +2,8 @@ using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Events;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using Ambev.DeveloperEvaluation.Unit.Application.Mapping;
+using AutoMapper;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -13,13 +15,15 @@ public class CreateSaleHandlerTests
 {
     private readonly ISaleRepository _saleRepository;
     private readonly ILogger<CreateSaleHandler> _logger;
+    private readonly IMapper _mapper;
     private readonly CreateSaleHandler _handler;
 
     public CreateSaleHandlerTests()
     {
         _saleRepository = Substitute.For<ISaleRepository>();
         _logger = Substitute.For<ILogger<CreateSaleHandler>>();
-        _handler = new CreateSaleHandler(_saleRepository, _logger);
+        _mapper = MapperFactory.Create();
+        _handler = new CreateSaleHandler(_saleRepository, _logger, _mapper);
     }
 
     [Fact(DisplayName = "Given valid sale data When creating sale Then recalculates and saves sale")]

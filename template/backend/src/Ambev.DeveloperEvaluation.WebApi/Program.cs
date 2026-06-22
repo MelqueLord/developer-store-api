@@ -28,6 +28,10 @@ public class Program
 
             builder.AddBasicHealthChecks();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddAutoMapper(
+                _ => { },
+                typeof(ApplicationLayer).Assembly,
+                typeof(Program).Assembly);
 
             builder.Services.AddDbContext<DefaultContext>(options =>
                 options.UseNpgsql(

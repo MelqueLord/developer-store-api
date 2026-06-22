@@ -2,7 +2,9 @@ using Ambev.DeveloperEvaluation.Application.Users.CreateUser;
 using Ambev.DeveloperEvaluation.Common.Security;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using Ambev.DeveloperEvaluation.Unit.Application.Mapping;
 using Ambev.DeveloperEvaluation.Unit.Domain;
+using AutoMapper;
 using FluentAssertions;
 using NSubstitute;
 using Xunit;
@@ -16,13 +18,15 @@ public class CreateUserHandlerTests
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IMapper _mapper;
     private readonly CreateUserHandler _handler;
 
     public CreateUserHandlerTests()
     {
         _userRepository = Substitute.For<IUserRepository>();
         _passwordHasher = Substitute.For<IPasswordHasher>();
-        _handler = new CreateUserHandler(_userRepository, _passwordHasher);
+        _mapper = MapperFactory.Create();
+        _handler = new CreateUserHandler(_userRepository, _passwordHasher, _mapper);
     }
 
     [Fact(DisplayName = "Given valid user data When creating user Then returns success response")]

@@ -2,6 +2,7 @@ using Ambev.DeveloperEvaluation.WebApi.Common;
 using Ambev.DeveloperEvaluation.WebApi.Features.Users.CreateUser;
 using Ambev.DeveloperEvaluation.WebApi.Features.Users.DeleteUser;
 using Ambev.DeveloperEvaluation.WebApi.Features.Users.GetUser;
+using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,14 +16,16 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Users;
 public class UsersController : BaseController
 {
     private readonly IMediator _mediator;
+    private readonly IMapper _mapper;
 
     /// <summary>
     /// Initializes a new instance of UsersController
     /// </summary>
     /// <param name="mediator">The mediator instance</param>
-    public UsersController(IMediator mediator)
+    public UsersController(IMediator mediator, IMapper mapper)
     {
         _mediator = mediator;
+        _mapper = mapper;
     }
 
     /// <summary>
@@ -42,13 +45,13 @@ public class UsersController : BaseController
         if (!validationResult.IsValid)
             return BadRequest(validationResult.Errors);
 
-        var response = await _mediator.Send(request.ToCommand(), cancellationToken);
+        var response = await _mediator.Send(_mapper.Map<Application.Users.CreateUser.CreateUserCommand>(request), cancellationToken);
 
         return Created(string.Empty, new ApiResponseWithData<CreateUserResponse>
         {
             Success = true,
             Message = "User created successfully",
-            Data = response.ToResponse()
+            Data = _mapper.Map<CreateUserResponse>(response)
         });
     }
 
@@ -71,13 +74,13 @@ public class UsersController : BaseController
         if (!validationResult.IsValid)
             return BadRequest(validationResult.Errors);
 
-        var response = await _mediator.Send(id.ToGetUserCommand(), cancellationToken);
+        var response = await _mediator.Send(_mapper.Map<Application.Users.GetUser.GetUserCommand>(id), cancellationToken);
 
         return Ok(new ApiResponseWithData<GetUserResponse>
         {
             Success = true,
             Message = "User retrieved successfully",
-            Data = response.ToResponse()
+            Data = _mapper.Map<GetUserResponse>(response)
         });
     }
 
@@ -100,7 +103,7 @@ public class UsersController : BaseController
         if (!validationResult.IsValid)
             return BadRequest(validationResult.Errors);
 
-        await _mediator.Send(id.ToDeleteUserCommand(), cancellationToken);
+        await _mediator.Send(_mapper.Map<Application.Users.DeleteUser.DeleteUserCommand>(id), cancellationToken);
 
         return Ok(new ApiResponse
         {
