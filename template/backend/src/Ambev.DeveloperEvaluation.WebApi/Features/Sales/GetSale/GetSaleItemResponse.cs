@@ -6,6 +6,11 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales.GetSale;
 public class GetSaleItemResponse
 {
     /// <summary>
+    /// Gets or sets the sale item identifier.
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
     /// Gets or sets the product identifier.
     /// </summary>
     public Guid ProductId { get; set; }

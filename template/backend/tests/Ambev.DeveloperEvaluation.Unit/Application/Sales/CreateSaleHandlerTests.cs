@@ -1,4 +1,5 @@
 using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
+using Ambev.DeveloperEvaluation.Application.Sales.GetSale;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Events;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
@@ -30,7 +31,26 @@ public class CreateSaleHandlerTests
     {
         var command = CreateValidCommand();
         var sale = CreateSale(command);
-        var result = new CreateSaleResult { Id = sale.Id, TotalAmount = 36m };
+        var result = new CreateSaleResult
+        {
+            Id = sale.Id,
+            SaleNumber = sale.SaleNumber,
+            TotalAmount = 36m,
+            Items =
+            [
+                new GetSaleItemResult
+                {
+                    Id = sale.Items.First().Id,
+                    ProductId = sale.Items.First().ProductId,
+                    ProductName = sale.Items.First().ProductName,
+                    Quantity = sale.Items.First().Quantity,
+                    UnitPrice = sale.Items.First().UnitPrice,
+                    DiscountPercentage = 0.10m,
+                    DiscountAmount = 4m,
+                    TotalAmount = 36m
+                }
+            ]
+        };
 
         _mapper.Map<Sale>(command).Returns(sale);
         _saleRepository.CreateAsync(Arg.Any<Sale>(), Arg.Any<CancellationToken>())
@@ -41,7 +61,10 @@ public class CreateSaleHandlerTests
 
         response.Should().NotBeNull();
         response.Id.Should().Be(sale.Id);
+        response.SaleNumber.Should().Be("SALE-001");
         response.TotalAmount.Should().Be(36m);
+        response.Items.Should().ContainSingle();
+        response.Items[0].DiscountAmount.Should().Be(4m);
         sale.TotalAmount.Should().Be(36m);
         sale.DomainEvents.Should().Contain(domainEvent => domainEvent is SaleCreatedEvent);
 
@@ -87,6 +110,7 @@ public class CreateSaleHandlerTests
             Items = command.Items
                 .Select(item => new SaleItem
                 {
+                    Id = Guid.NewGuid(),
                     ProductId = item.ProductId,
                     ProductName = item.ProductName,
                     Quantity = item.Quantity,
