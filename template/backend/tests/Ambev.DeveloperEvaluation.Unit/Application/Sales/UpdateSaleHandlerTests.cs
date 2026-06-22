@@ -53,6 +53,24 @@ public class UpdateSaleHandlerTests
             Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "Given missing sale When updating sale Then throws KeyNotFoundException")]
+    public async Task Handle_MissingSale_ThrowsKeyNotFoundException()
+    {
+        var saleId = Guid.NewGuid();
+        var command = CreateValidCommand(saleId);
+
+        _saleRepository.GetByIdAsync(command.Id, Arg.Any<CancellationToken>()).Returns((Sale?)null);
+
+        var act = () => _handler.Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>()
+            .WithMessage($"Sale with ID {saleId} not found");
+
+        await _saleRepository.DidNotReceive().UpdateAsync(
+            Arg.Any<Sale>(),
+            Arg.Any<CancellationToken>());
+    }
+
     private static UpdateSaleCommand CreateValidCommand(Guid saleId)
     {
         return new UpdateSaleCommand
